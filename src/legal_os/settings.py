@@ -12,6 +12,7 @@ class FeatureFlags(BaseModel):
     enable_redis: bool = False
     enable_elasticsearch: bool = False
     enable_pgvector: bool = False
+    enable_gptqa: bool = False
 
 
 class Settings(BaseSettings):
@@ -34,6 +35,13 @@ class Settings(BaseSettings):
     minio_secret_key: str | None = None
     minio_bucket: str | None = None
     minio_secure: bool = True
+
+    # Optional AI provider configuration (stubbed in dev)
+    ai_provider: str | None = None  # e.g., "azure", "openai"
+    ai_endpoint: str | None = None
+    ai_api_key: str | None = None
+    qa_model_primary: str = "gpt-5"
+    qa_model_fallback: str = "gpt-5-mini"
 
     # Optional feature flags (can be set via env nesting FLAGS__ENABLE_MINIO=true, etc.)
     flags: FeatureFlags = FeatureFlags()
@@ -93,6 +101,9 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "MinIO is enabled but missing required settings: " + ", ".join(missing)
                 )
+
+        # When GPT QA is enabled in future, enforce presence of required settings.
+        # For now, the QA layer is a stub and does not require external service config.
 
 
 @lru_cache

@@ -11,7 +11,11 @@ from .routers import auth as auth_router
 from .routers import upload as upload_router
 from .routers import metadata as metadata_router
 from .routers import sessions as sessions_router
+from .routers import quality as quality_router
+from .routers import docling as docling_router
 from .db import ping_database
+from .routers import langextract as langextract_router
+from .routers import qa as qa_router
 
 
 _APP_START_MONOTONIC = time.monotonic()
@@ -147,6 +151,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(upload_router.router)
     app.include_router(metadata_router.router)
     app.include_router(sessions_router.router)
+    app.include_router(quality_router.router)
+    app.include_router(docling_router.router)
+    app.include_router(langextract_router.router)
+    app.include_router(qa_router.router)
 
     return app
 
