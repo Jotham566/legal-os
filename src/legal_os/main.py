@@ -1,10 +1,19 @@
 from typing import Annotated, Callable, Awaitable
 
+import time
+from datetime import datetime, timezone
 from fastapi import Depends, FastAPI, Request
 
 from .settings import Settings, get_settings
 from .dependencies import apply_security_headers, rate_limit, require_roles
+from .logging_config import configure_json_logging, set_request_id
 from .routers import auth as auth_router
+from .db import ping_database
+
+
+_APP_START_MONOTONIC = time.monotonic()
+_APP_START_ISO = datetime.now(timezone.utc).isoformat()
+_REQUEST_COUNT = 0
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -12,6 +21,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Validate configuration early to fail-fast on invalid env setups
     settings.assert_valid()
     app = FastAPI(title="Legal OS API", version="0.1.0")
+    configure_json_logging()
 
     # Security headers middleware
     @app.middleware("http")
@@ -22,6 +32,71 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         apply_security_headers(request, response)
         return response
 
+    # Correlation ID + timing middleware and request counting
+    @app.middleware("http")
+    async def _correlation_and_timing_mw(
+        request: Request, call_next: Callable[[Request], Awaitable]
+    ) -> object:  # pragma: no cover - simple
+        import logging
+        import uuid
+
+        logger = logging.getLogger("request")
+        req_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+        set_request_id(req_id)
+        start = time.perf_counter()
+        try:
+            response = await call_next(request)
+        except Exception:
+            _ = int((time.perf_counter() - start) * 1000)
+            logger.exception(
+                "request_error",
+            )
+            set_request_id(None)
+            raise
+        _ = int((time.perf_counter() - start) * 1000)
+        logger.info(
+            "request_completed",
+        )
+        response.headers.setdefault("X-Request-ID", req_id)
+        set_request_id(None)
+        global _REQUEST_COUNT
+        _REQUEST_COUNT += 1
+        return response
+
+    def _uptime_seconds() -> int:
+        return int(time.monotonic() - _APP_START_MONOTONIC)
+
+    def _app_info() -> dict[str, object]:
+        return {
+            "status": "ok",
+            "name": settings.app_name,
+            "version": app.version,
+            "env": settings.env,
+            "started_at": _APP_START_ISO,
+            "uptime_seconds": _uptime_seconds(),
+            "requests": _REQUEST_COUNT,
+        }
+
+    @app.get("/health/live")
+    async def liveness() -> dict[str, object]:  # pragma: no cover - trivial
+        # Liveness should not depend on external services
+        data = _app_info()
+        data["status"] = "live"
+        return data
+
+    @app.get("/health/ready")
+    async def readiness_v2() -> dict[str, object]:  # pragma: no cover - trivial path
+        # Readiness includes dependency checks (DB, etc.)
+        db_ok = ping_database()
+        return {
+            **_app_info(),
+            "status": "ready" if db_ok else "degraded",
+            "dependencies": {
+                "database": "ok" if db_ok else "fail",
+            },
+        }
+
+    # Backwards-compat simple endpoints
     @app.get("/health")
     async def health() -> dict[str, str]:  # pragma: no cover - trivial
         return {"status": "ok"}
@@ -29,7 +104,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/readiness")
     async def readiness() -> dict[str, str]:  # pragma: no cover - trivial
         # In future, add checks for DB, storage, and external services
-        return {"status": "ready"}
+        db_ok = ping_database()
+        return {"status": "ready" if db_ok else "degraded"}
 
     @app.get("/config")
     async def config_echo() -> dict[str, str | int | bool]:

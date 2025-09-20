@@ -51,3 +51,20 @@ class DocumentVersion(Base):
     )
 
     document: Mapped[Document] = relationship(back_populates="versions")
+
+
+class AuditEvent(Base):
+    __tablename__ = "audit_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+    actor: Mapped[str] = mapped_column(String(256), nullable=False)
+    action: Mapped[str] = mapped_column(String(256), nullable=False)
+    entity_type: Mapped[str] = mapped_column(String(128), nullable=False)
+    entity_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    meta: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    # Tamper-evident chaining: hash of previous event + current payload
+    prev_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)

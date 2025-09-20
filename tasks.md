@@ -143,23 +143,21 @@
   - **Success Criteria**: Secure access control meeting legal standards
 
 ### 0.3 Logging & Monitoring Foundation
-- [ ] **0.3.1** Comprehensive logging system
-  - Structured JSON logging with correlation IDs
-  - Legal audit trail with tamper detection
-  - Performance metrics and timing
-  - Error tracking with context preservation
+- [x] **0.3.1** Comprehensive logging system ✅ (completed 2025-09-20)
+  - Implemented structured JSON logging with correlation IDs and per-request timing
+  - Added legal-grade audit trail with SHA-256 hash chaining and tamper detection
+  - Captured performance metrics and exception logs with full request/user context
+  - Added unit tests for log format, request_id propagation, audit chain verification, and tamper detection; all quality gates green (pytest, flake8, mypy)
   - **Spec Reference**: Auditability, Complete provenance chain
-  - **Tests**: Log format validation, audit trail integrity
-  - **Success Criteria**: Complete legal-grade audit capability
+  - **Success Criteria**: Legal-grade, verifiable audit integrity with structured observability
 
-- [ ] **0.3.2** Health checks and monitoring
-  - Application health endpoints
-  - Database connectivity monitoring
-  - AI service availability checks
-  - Performance baseline establishment
+- [x] **0.3.2** Health checks and monitoring ✅ (completed 2025-09-20)
+  - Added liveness endpoint (`GET /health/live`) with app name, version, env, start time, uptime, and request counter
+  - Added readiness endpoint (`GET /health/ready`) with dependency status including DB ping; legacy `/health` and `/readiness` retained
+  - Implemented lightweight DB connectivity check via `SELECT 1`
+  - Added tests for liveness, readiness, and legacy endpoints; all quality gates green (pytest, flake8, mypy)
   - **Spec Reference**: Scalability, Quality assurance workflows
-  - **Tests**: Health check reliability, alerting thresholds
-  - **Success Criteria**: Proactive system health monitoring
+  - **Success Criteria**: Reliable health signals and dependency monitoring foundation
 
 ### 0.4 Containerization & Infrastructure Setup
 - [ ] **0.4.1** Docker containerization

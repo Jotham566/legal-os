@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 from sqlalchemy.engine import Engine
 
@@ -21,6 +21,20 @@ def get_engine(echo: bool | None = None) -> Engine:
         future=True,
     )
     return engine
+
+
+def ping_database() -> bool:
+    """Perform a lightweight connectivity check against the configured DB.
+
+    Returns True if a simple SELECT 1 executes successfully, otherwise False.
+    """
+    try:
+        engine = get_engine(echo=False)
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return True
+    except Exception:
+        return False
 
 
 # Configure a session factory (synchronous)
