@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
-from typing import Literal, List
 
 
 class DocumentIn(BaseModel):
@@ -179,3 +178,29 @@ class QAValidationResult(BaseModel):
     metrics: QAValidationMetrics
     overall_confidence: float = Field(ge=0.0, le=1.0)
     notes: List[str] = Field(default_factory=list)
+
+
+class CombinedExtractionResult(BaseModel):
+    docling: DoclingResult
+    langextract: LangExtractResult
+    qa: QAValidationResult
+    used_premium_ocr: bool = False
+    enhanced_legal_analysis: bool = False
+    final_confidence: float = Field(ge=0.0, le=1.0)
+    notes: List[str] = Field(default_factory=list)
+
+
+class ReviewTaskOut(BaseModel):
+    id: str
+    status: Literal["queued", "in_review", "completed", "rejected"]
+    priority: Literal["low", "medium", "high", "critical"]
+    expert_type: Literal[
+        "constitutional_law_expert",
+        "tax_law_expert",
+        "commercial_law_expert",
+        "general_legal_expert",
+    ]
+    reasons: List[str] = Field(default_factory=list)
+    final_confidence: float = Field(ge=0.0, le=1.0)
+    created_at: datetime
+    updated_at: datetime

@@ -16,6 +16,9 @@ from .routers import docling as docling_router
 from .db import ping_database
 from .routers import langextract as langextract_router
 from .routers import qa as qa_router
+from .routers import orchestrator as orchestrator_router
+from .routers import compliance as compliance_router
+from .routers import review as review_router
 
 
 _APP_START_MONOTONIC = time.monotonic()
@@ -155,6 +158,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(docling_router.router)
     app.include_router(langextract_router.router)
     app.include_router(qa_router.router)
+    app.include_router(orchestrator_router.router)
+    app.include_router(compliance_router.router)
+    app.include_router(review_router.router)
 
     return app
 
