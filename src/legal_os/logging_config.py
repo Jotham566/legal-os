@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import sys
 from contextvars import ContextVar
 from datetime import datetime, timezone
@@ -27,6 +28,19 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(payload, separators=(",", ":"))
 
 
+class _RedactFilter(logging.Filter):
+    _patterns = [
+        (re.compile(r"(AI_API_KEY=)([^\s]+)"), r"\1***"),
+    ]
+
+    def filter(self, record: logging.LogRecord) -> bool:  # pragma: no cover - simple
+        msg = str(record.getMessage())
+        for pattern, repl in self._patterns:
+            msg = pattern.sub(repl, msg)
+        record.msg = msg
+        return True
+
+
 def configure_json_logging(level: int = logging.INFO) -> None:
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(JsonFormatter())
@@ -34,6 +48,8 @@ def configure_json_logging(level: int = logging.INFO) -> None:
     root.handlers.clear()
     root.addHandler(handler)
     root.setLevel(level)
+    for h in root.handlers:
+        h.addFilter(_RedactFilter())
 
 
 def set_request_id(request_id: Optional[str]) -> None:

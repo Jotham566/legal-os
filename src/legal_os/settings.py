@@ -13,6 +13,9 @@ class FeatureFlags(BaseModel):
     enable_elasticsearch: bool = False
     enable_pgvector: bool = False
     enable_gptqa: bool = False
+    enable_aad: bool = False
+    enable_keyvault: bool = False
+    enable_external_ai: bool = False
 
 
 class Settings(BaseSettings):
@@ -43,7 +46,15 @@ class Settings(BaseSettings):
     qa_model_primary: str = "gpt-5"
     qa_model_fallback: str = "gpt-5-mini"
 
-    # Optional feature flags (can be set via env nesting FLAGS__ENABLE_MINIO=true, etc.)
+    # Azure AD (optional)
+    aad_tenant_id: str | None = None
+    aad_client_id: str | None = None
+    aad_audience: str | None = None
+
+    # Azure Key Vault (optional)
+    keyvault_uri: str | None = None
+
+    # Optional feature flags (can be set via env nesting FLAGS__*)
     flags: FeatureFlags = FeatureFlags()
 
     model_config = SettingsConfigDict(
@@ -71,6 +82,10 @@ class Settings(BaseSettings):
         - production must have debug == False
         - app_name must be non-empty
         - if enable_pgvector, require a Postgres URL
+        - when external AI is enabled, require configured provider and endpoint
+        - when GPT QA is enabled, ensure models configured
+        - when AAD is enabled, require tenant/client/audience
+        - when Key Vault is enabled, require keyvault_uri
         """
         if not self.app_name:
             raise ValueError("APP_NAME must be set")
@@ -80,8 +95,8 @@ class Settings(BaseSettings):
                 raise ValueError("DEBUG must be False in production")
             if self.is_sqlite:
                 raise ValueError("SQLite is not allowed in production")
-            if not self.jwt_secret:
-                raise ValueError("JWT_SECRET must be set in production")
+            if not self.jwt_secret and not self.flags.enable_aad:
+                raise ValueError("JWT_SECRET must be set in production (or enable AAD)")
 
         if self.flags.enable_pgvector and not self.is_postgres:
             raise ValueError("pgvector requires a PostgreSQL DATABASE_URL")
@@ -102,8 +117,20 @@ class Settings(BaseSettings):
                     "MinIO is enabled but missing required settings: " + ", ".join(missing)
                 )
 
-        # When GPT QA is enabled in future, enforce presence of required settings.
-        # For now, the QA layer is a stub and does not require external service config.
+        if self.flags.enable_external_ai:
+            if not self.ai_provider or not self.ai_endpoint:
+                raise ValueError("External AI enabled but AI_PROVIDER/AI_ENDPOINT not set")
+
+        if self.flags.enable_gptqa:
+            if not self.qa_model_primary or not self.qa_model_fallback:
+                raise ValueError("GPT QA enabled but models not configured")
+
+        if self.flags.enable_aad:
+            if not self.aad_tenant_id or not self.aad_client_id or not self.aad_audience:
+                raise ValueError("AAD enabled but tenant/client/audience not configured")
+
+        if self.flags.enable_keyvault and not self.keyvault_uri:
+            raise ValueError("Key Vault enabled but KEYVAULT_URI is missing")
 
 
 @lru_cache

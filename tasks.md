@@ -142,6 +142,23 @@
   - **Tests**: Auth flows, permission enforcement, security headers
   - **Success Criteria**: Secure access control meeting legal standards
 
+- [x] **0.2.3** Azure AD OAuth 2.0 integration ✅ (completed 2025-09-20)
+  - Integrate with Azure AD for OAuth 2.0 flows; maintain JWT issuance for internal services
+  - Add login endpoint and token exchange; refresh token handling where applicable
+  - **Tests**: OAuth flow success/failure, token validation, RBAC enforcement
+  - **Success Criteria**: Azure AD-backed auth working with least-privilege scopes
+
+- [x] **0.2.4** Secrets management via Azure Key Vault ✅ (completed 2025-09-20)
+  - Load sensitive settings (JWT secret, AI keys, DB creds) from Key Vault in non-dev envs
+  - Ensure secret rotation without restarts where possible
+  - **Tests**: Fallback to env for dev, Key Vault retrieval mocked in tests
+  - **Success Criteria**: No secrets in code or images; secure retrieval paths validated
+
+- [x] **0.2.5** Fine-grained document-level RBAC ✅ (completed 2025-09-20)
+  - Define roles and permissions per document/collection; add policy checks on read/write endpoints
+  - **Tests**: Permitted vs denied access, audit entries for denied actions
+  - **Success Criteria**: Document access complies with least privilege and auditability
+
 ### 0.3 Logging & Monitoring Foundation
 - [x] **0.3.1** Comprehensive logging system ✅ (completed 2025-09-20)
   - Implemented structured JSON logging with correlation IDs and per-request timing
@@ -206,7 +223,7 @@
 - [x] **1.1.3** Processing session management ✅ (completed 2025-09-20)
   - Added `ProcessingSession` model with `status`, `progress`, `eta_seconds`, `checkpoints`, and `last_error`
   - Implemented service (`SessionService`) for create/get/update/complete/fail with safe bounds and timestamp updates
-  - Added API: `POST /sessions`, `GET /sessions/{id}`, `PATCH /sessions/{id}`, and SSE stream at `GET /sessions/{id}/events`
+  - Added API: `POST /sessions`, `GET /sessions/{id}`, `PATCH /sessions/{id}`, and SSE stream at `GET /sessions/{id}/events
   - Tests cover create/get/update/complete flows; quality gates green (pytest, flake8, mypy)
   - **Success Criteria**: Sessions can be tracked with progress and live updates
 
@@ -245,6 +262,21 @@
   - Config: Added optional env placeholders in `.env.example`, `.env.compose`, `.env.test` for future real provider integration; added `FLAGS__ENABLE_GPTQA` flag and AI settings in `Settings`
   - **Spec Reference**: Core Processing Tools - GPT-5 family models
   - **Success Criteria (stub)**: Deterministic QA metrics with valid confidences; route ready for real model integration
+
+- [x] **1.2.5** External AI provider clients & resiliency ✅ (completed 2025-09-20)
+  - Implement provider client adapters for Docling, LangExtract (Gemini), and GPT QA behind feature flags
+  - HTTP clients with timeouts, retries (exponential backoff), jitter; circuit breaker for consecutive failures
+  - Typed request/response models; structured error mapping and redaction of sensitive fields
+  - Endpoint-level rate limits for AI-backed endpoints
+  - **Tests**: Retry/backoff behavior, timeout handling, circuit opening/closing, rate limit responses
+  - **Success Criteria**: Resilient external integrations with safe failure modes
+
+- [x] **1.2.6** AI integration configuration & secrets hardening ✅ (completed 2025-09-20)
+  - Validate required settings when feature flags enabled (e.g., `FLAGS__ENABLE_GPTQA=true`)
+  - Load API keys from environment/Key Vault; redact in logs and error messages
+  - Update `.env.example`, `.env.compose`, `.env.test` docs for real integrations
+  - **Tests**: Missing/invalid config raises clear errors; no secret leakage in logs
+  - **Success Criteria**: Secure, validated configuration for live providers
 
 ### 1.3 Enhanced Quality Assurance Implementation
 - [ ] **1.3.1** Multi-path extraction with fallbacks
@@ -478,6 +510,18 @@
   - **Spec Reference**: AccuracyMonitoringSystem, Continuous monitoring
   - **Tests**: Monitoring accuracy, alert reliability, trend analysis
   - **Success Criteria**: Proactive quality monitoring with rapid issue detection
+
+- [ ] **5.1.3** Prometheus metrics & tracing baseline
+  - Expose `/metrics` with Prometheus counters/histograms for critical endpoints (quality, docling, langextract, QA)
+  - Add OpenTelemetry tracing spans; export to Jaeger/OTel collector; propagate request IDs
+  - **Tests**: Metrics endpoint returns data; basic span creation verified via unit/integration harness
+  - **Success Criteria**: Actionable metrics and traces for performance and error analysis
+
+- [ ] **5.1.4** Sentry error tracking integration
+  - Initialize Sentry SDK with environment and release tags; scrub PII and secrets
+  - Capture unhandled exceptions and attach request correlation IDs
+  - **Tests**: Mock transport asserts events emitted on errors
+  - **Success Criteria**: Reliable error telemetry without sensitive data leakage
 
 ### 5.2 Legal Compliance Framework
 - [ ] **5.2.1** Compliance validation system
