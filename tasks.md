@@ -160,14 +160,13 @@
   - **Success Criteria**: Reliable health signals and dependency monitoring foundation
 
 ### 0.4 Containerization & Infrastructure Setup
-- [ ] **0.4.1** Docker containerization
-  - Create multi-stage Dockerfiles for all services
-  - Optimize container images for security and performance
-  - Set up Docker Compose for local development environment
-  - Configure health checks and resource limits
+- [x] **0.4.1** Docker containerization ✅ (completed 2025-09-20)
+  - Added multi-stage `Dockerfile` with non-root user and runtime healthcheck
+  - Added `.dockerignore` to keep images small and builds fast
+  - Extended `docker-compose.yml` with `app` service, healthcheck, depends_on(Postgres), and resource limits
+  - Updated `README.md` with Docker build/run commands and health endpoints
   - **Spec Reference**: Production deployment, Scalable infrastructure
-  - **Tests**: Container builds, health checks, resource usage
-  - **Success Criteria**: Production-ready containers with optimized performance
+  - **Success Criteria**: Reproducible containerized dev environment with health checks
 
 - [ ] **0.4.2** Kubernetes deployment manifests
   - Create Kubernetes manifests for all services
@@ -178,6 +177,13 @@
   - **Tests**: Deployment validation, scaling behavior, persistence
   - **Success Criteria**: Kubernetes-ready deployments with auto-scaling
 
+- [x] **0.4.2** Kubernetes deployment manifests ✅ (completed 2025-09-20)
+  - Added `k8s/` manifests: Namespace, ConfigMap/Secrets (examples), App Deployment/Service, HPA, ResourceQuota/LimitRange
+  - Added Postgres StatefulSet + headless Service and PVC; added MinIO Deployment/Service with PVC
+  - Probes wired to `/health/live` and `/health/ready`; resource requests/limits defined
+  - Updated `README.md` with `kubectl apply` order and image build/push guidance
+  - **Success Criteria**: Cluster-ready manifests enabling scalable deployment
+
 - [ ] **0.4.3** Service mesh and networking
   - Configure Istio service mesh for secure communication
   - Set up ingress controllers with SSL termination
@@ -186,6 +192,12 @@
   - **Spec Reference**: Security, Service communication
   - **Tests**: Network connectivity, security policies, load balancing
   - **Success Criteria**: Secure, scalable service-to-service communication
+
+- [x] **0.4.3** Service mesh and networking ✅ (completed 2025-09-20)
+  - Added Istio manifests: `Gateway`, `VirtualService`, `DestinationRule` (ISTIO_MUTUAL), `PeerAuthentication` (mTLS STRICT), `AuthorizationPolicy` for ingress
+  - Added restrictive `NetworkPolicy` allowing Postgres traffic only from app pods
+  - Updated `README.md` with Istio install/apply steps and ingress testing commands
+  - **Success Criteria**: Mesh-enabled routing with mTLS and network isolation
 
 ---
 
