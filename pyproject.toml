@@ -16,6 +16,9 @@ python-dotenv = "^1.0.1"
 SQLAlchemy = "^2.0.32"
 alembic = "^1.13.2"
 psycopg = {version = "^3.2.10", extras = ["binary"]}
+python-jose = {version = "^3.3.0", extras = ["cryptography"]}
+passlib = {version = "^1.7.4", extras = ["bcrypt"]}
+python-multipart = "^0.0.9"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"

@@ -121,20 +121,23 @@
   - **Success Criteria**: Schemas and versioning operations validated end-to-end
 
 ### 0.2 Configuration & Security Framework
-- [ ] **0.2.1** Configuration management system
-  - Environment-based configuration (dev/test/prod)
-  - Secure credential management with Azure Key Vault integration
-  - Feature flags for gradual rollout
-  - Configuration validation at startup
+- [x] **0.2.1** Configuration management system ✅ (completed 2025-09-20)
+  - Implemented environment-based configuration with `pydantic-settings` and nested models
+  - Added feature flags (`FLAGS__*`) with `env_nested_delimiter="__"`
+  - Enforced configuration validation at startup via `assert_valid()` (fail-fast for invalid prod setups)
+  - Added tests for nested flag parsing and invariant checks; all quality gates green
+  - Note: Azure Key Vault integration deferred to later security hardening phase
   - **Spec Reference**: Scalability, Legal Awareness
-  - **Tests**: Configuration loading, validation, secret management
+  - **Tests**: Configuration loading and validation
   - **Success Criteria**: Secure, environment-aware configuration
 
-- [ ] **0.2.2** Authentication & authorization framework
-  - JWT-based authentication for API access
-  - Role-based access control (legal experts, admins, users)
-  - Document-level permissions and confidentiality
-  - API rate limiting and security headers
+- [x] **0.2.2** Authentication & authorization framework ✅ (completed 2025-09-20)
+  - Implemented JWT-based authentication with token issuance (`POST /auth/token`)
+  - Added RBAC via dependency (`require_roles`) and protected route (`GET /admin`)
+  - Added security headers middleware and in-memory rate limiting for `/auth/token`
+  - Extended settings with `JWT_SECRET`, algorithm, expiry; updated `.env.example`
+  - Added comprehensive tests: login success/failure, RBAC 403, headers present, rate limit 429
+  - Note: Document-level permissions will be implemented when document endpoints are added
   - **Spec Reference**: Legal Professional Standards, Data Protection
   - **Tests**: Auth flows, permission enforcement, security headers
   - **Success Criteria**: Secure access control meeting legal standards
