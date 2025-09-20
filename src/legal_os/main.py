@@ -8,6 +8,9 @@ from .settings import Settings, get_settings
 from .dependencies import apply_security_headers, rate_limit, require_roles
 from .logging_config import configure_json_logging, set_request_id
 from .routers import auth as auth_router
+from .routers import upload as upload_router
+from .routers import metadata as metadata_router
+from .routers import sessions as sessions_router
 from .db import ping_database
 
 
@@ -22,6 +25,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings.assert_valid()
     app = FastAPI(title="Legal OS API", version="0.1.0")
     configure_json_logging()
+    # Ensure dependencies using get_settings receive this instance
+    app.dependency_overrides[get_settings] = lambda: settings
 
     # Security headers middleware
     @app.middleware("http")
@@ -139,6 +144,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     # Routers
     app.include_router(auth_router.router)
+    app.include_router(upload_router.router)
+    app.include_router(metadata_router.router)
+    app.include_router(sessions_router.router)
 
     return app
 

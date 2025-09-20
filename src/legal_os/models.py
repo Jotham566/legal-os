@@ -68,3 +68,21 @@ class AuditEvent(Base):
     # Tamper-evident chaining: hash of previous event + current payload
     prev_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+
+
+class ProcessingSession(Base):
+    __tablename__ = "processing_sessions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+    status: Mapped[str] = mapped_column(String(32), default="running", nullable=False)
+    progress: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    eta_seconds: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    checkpoints: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    last_error: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
+    source_key: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)

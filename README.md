@@ -26,6 +26,16 @@ poetry run uvicorn legal_os.main:app --reload
 
 Health check at `http://127.0.0.1:8000/health`.
 
+### Upload API
+
+Upload a PDF/DOCX/ODT (default max 500MB):
+
+```bash
+curl -s -F file=@./Income-Tax-Act-chapter-338-dec-2024.pdf \
+	-H 'Expect:' \
+	http://127.0.0.1:8000/upload | jq
+```
+
 ### Run with Docker
 
 Build and run the app with Postgres using Docker Compose:

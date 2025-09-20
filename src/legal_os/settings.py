@@ -24,6 +24,16 @@ class Settings(BaseSettings):
     jwt_secret: str | None = None
     jwt_algorithm: Literal["HS256"] = "HS256"
     jwt_expire_minutes: int = 60
+    # Uploads
+    max_upload_mb: int = 500
+    uploads_dir: str = "./uploads"
+
+    # Optional MinIO (S3-compatible) for document storage
+    minio_endpoint: str | None = None
+    minio_access_key: str | None = None
+    minio_secret_key: str | None = None
+    minio_bucket: str | None = None
+    minio_secure: bool = True
 
     # Optional feature flags (can be set via env nesting FLAGS__ENABLE_MINIO=true, etc.)
     flags: FeatureFlags = FeatureFlags()
@@ -67,6 +77,22 @@ class Settings(BaseSettings):
 
         if self.flags.enable_pgvector and not self.is_postgres:
             raise ValueError("pgvector requires a PostgreSQL DATABASE_URL")
+
+        if self.flags.enable_minio:
+            missing = [
+                k
+                for k, v in {
+                    "MINIO_ENDPOINT": self.minio_endpoint,
+                    "MINIO_ACCESS_KEY": self.minio_access_key,
+                    "MINIO_SECRET_KEY": self.minio_secret_key,
+                    "MINIO_BUCKET": self.minio_bucket,
+                }.items()
+                if not v
+            ]
+            if missing:
+                raise ValueError(
+                    "MinIO is enabled but missing required settings: " + ", ".join(missing)
+                )
 
 
 @lru_cache
