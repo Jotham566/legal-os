@@ -19,6 +19,7 @@ from .routers import qa as qa_router
 from .routers import orchestrator as orchestrator_router
 from .routers import compliance as compliance_router
 from .routers import review as review_router
+from .routers import groundedness as groundedness_router
 
 
 _APP_START_MONOTONIC = time.monotonic()
@@ -161,6 +162,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(orchestrator_router.router)
     app.include_router(compliance_router.router)
     app.include_router(review_router.router)
+    app.include_router(groundedness_router.router)
 
     return app
 

@@ -298,14 +298,10 @@
   - Tests verify task creation on low confidence, task listing, progression, and no-task for high confidence
 
 ### 1.4 Groundedness & Citation Verification
-- [ ] **1.4.1** Enhanced groundedness verification
-  - Character-level exact matching with 99.5% precision
-  - Contextual accuracy validation for surrounding content
-  - Numerical and date precision verification
-  - Cross-reference integrity checking
-  - **Spec Reference**: GroundednessValidator, Enhanced Groundedness
-  - **Tests**: Groundedness scoring accuracy, text matching precision
-  - **Success Criteria**: 99%+ groundedness verification with precise validation
+- [x] **1.4.1** Enhanced groundedness verification ✅ (completed 2025-09-21)
+  - Implemented `GroundednessValidator` with character-level alignment, contextual boundary checks, and numeric/date/ref integrity
+  - New endpoint `POST /groundedness/verify` returns per-check confidences, failed checks, and overall score
+  - Tests validate exact match ≥99.5%, numbers/dates precision, and cross-reference detection; quality gates green
 
 - [ ] **1.4.2** Legal-grade citation system
   - 99.5% citation accuracy with legal admissibility assessment
