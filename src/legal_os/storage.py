@@ -12,13 +12,22 @@ class Storage(Protocol):
 
     def url_for(self, key: str) -> str | None: ...
 
+    def delete_object(self, key: str) -> None: ...
+
+    def exists(self, key: str) -> bool: ...
+
+    def get_object(self, key: str) -> bytes: ...
+
 
 @dataclass
 class LocalStorage:
     base_dir: str
 
+    def _path(self, key: str) -> str:
+        return os.path.join(self.base_dir, key)
+
     def put_object(self, key: str, stream: BinaryIO, length: int) -> None:
-        dest_path = os.path.join(self.base_dir, key)
+        dest_path = self._path(key)
         os.makedirs(os.path.dirname(dest_path), exist_ok=True)
         with open(dest_path, "wb") as f:
             remaining = length
@@ -31,6 +40,19 @@ class LocalStorage:
 
     def url_for(self, key: str) -> str | None:
         return None
+
+    def delete_object(self, key: str) -> None:
+        try:
+            os.remove(self._path(key))
+        except FileNotFoundError:
+            pass
+
+    def exists(self, key: str) -> bool:
+        return os.path.exists(self._path(key))
+
+    def get_object(self, key: str) -> bytes:
+        with open(self._path(key), "rb") as f:
+            return f.read()
 
 
 @dataclass
@@ -45,6 +67,7 @@ class MinioStorage:
     def __post_init__(self) -> None:
         try:
             from minio import Minio  # type: ignore
+            from minio.error import S3Error  # type: ignore
         except Exception as e:  # pragma: no cover - optional dep
             raise RuntimeError("minio package is required when using MinioStorage") from e
         self._client = Minio(
@@ -53,6 +76,7 @@ class MinioStorage:
             secret_key=self.secret_key,
             secure=self.secure,
         )
+        self._S3Error = S3Error  # store for use in methods
         # Ensure bucket exists
         if not self._client.bucket_exists(self.bucket):  # pragma: no cover - env dependent
             self._client.make_bucket(self.bucket)
@@ -70,6 +94,32 @@ class MinioStorage:
             )
         except Exception:
             return None
+
+    def delete_object(self, key: str) -> None:
+        # Best-effort delete
+        try:  # pragma: no cover - network dependent
+            self._client.remove_object(self.bucket, key)
+        except Exception:
+            pass
+
+    def exists(self, key: str) -> bool:
+        try:  # pragma: no cover - network dependent
+            self._client.stat_object(self.bucket, key)
+            return True
+        except Exception:
+            return False
+
+    def get_object(self, key: str) -> bytes:
+        try:  # pragma: no cover - network dependent
+            resp = self._client.get_object(self.bucket, key)
+            try:
+                data = resp.read()
+                return cast(bytes, data)
+            finally:
+                resp.close()
+                resp.release_conn()
+        except Exception as e:
+            raise FileNotFoundError(key) from e
 
 
 def document_original_key(document_id: str, version_id: str) -> str:

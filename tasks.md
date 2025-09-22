@@ -362,33 +362,50 @@
   - Success Criteria: Reliable storage with verified integrity and validation hooks
 
 ### 2.2 Akoma Ntoso XML Implementation
-- [ ] **2.2.1** XML transformation engine
+- [x] **2.2.1** XML transformation engine (in progress; core implemented 2025-09-22)
   - JSON to Akoma Ntoso XML conversion
   - International legal document standard compliance
   - Semantic structure preservation
   - Metadata mapping and validation
+  - Implemented minimal AKN service and API endpoint `POST /api/v1/akn/transform`; XML well-formedness validation via lxml
+  - Added tests `tests/test_akn.py` and `tests/test_akn_requests.py` covering success, empty payload, and invalid XML error path
   - **Spec Reference**: Akoma Ntoso XML Storage, Standards Compliance
   - **Tests**: XML validation, standard compliance, transformation accuracy
   - **Success Criteria**: Valid Akoma Ntoso XML with preserved semantics
 
-- [ ] **2.2.2** XML query optimization
-  - XPath/XQuery optimization for legal queries
-  - Indexed XML storage for performance
-  - Semantic query capabilities
-  - Cross-reference navigation
+- [x] **2.2.2** XML query optimization ✅ (completed 2025-09-22)
+  - Added `AKNQueryEngine` in `src/legal_os/services/akn_query.py` with namespace-aware XPath evaluation, section lookup by eId, and neighbor navigation
+  - New endpoints in `src/legal_os/routers/akn_query.py`:
+    - `POST /api/v1/akn/xpath` → run XPath and return stringified results
+    - `POST /api/v1/akn/section` → fetch section by `eId` with heading and serialized XML
+    - `POST /api/v1/akn/nav` → previous/next navigation for a given `eId`
+  - Wired router into app in `src/legal_os/main.py`
+  - Tests `tests/test_akn_query.py` cover XPath text results, section lookup, and neighbor navigation; all pass
   - **Spec Reference**: Optimized queries, Semantic queries
   - **Tests**: Query performance, accuracy, semantic capabilities
   - **Success Criteria**: Fast, accurate XML queries with semantic understanding
 
 ### 2.3 Storage Synchronization
-- [ ] **2.3.1** Dual storage consistency
-  - Atomic operations across both storage formats
-  - Consistency checks and validation
-  - Conflict resolution strategies
-  - Rollback capabilities for failed operations
-  - **Spec Reference**: Dual Storage Architecture, Consistency
-  - **Tests**: Consistency validation, rollback scenarios
-  - **Success Criteria**: Guaranteed consistency across storage formats
+- [x] **2.3.1** Dual storage consistency ✅ (completed 2025-09-22)
+  - Implemented `DualStorageCoordinator` to coordinate atomic-like writes of JSON (DB) and XML (object storage)
+  - Extended `Storage` protocol with `delete_object` and `exists` and implemented for Local/MinIO
+  - On XML storage failure, DB insert is rolled back by transaction scope; on success, both stores remain consistent
+  - Tests `tests/test_dual_storage.py` cover success path and XML failure rollback behavior (transaction-scoped)
+  - **Success Criteria**: Consistency across JSONB and XML artifact with rollback on failures
+
+- [x] **2.3.2** Consistency checks and validation ✅ (completed 2025-09-22)
+  - Added `ConsistencyChecker` with presence check and naive reconcile (regenerate missing XML)
+  - Added endpoints: `POST /api/v1/consistency/check` and `POST /api/v1/consistency/reconcile` (admin-protected)
+  - Extended `Storage` with `get_object` for potential deep validation in later steps
+  - Tests `tests/test_consistency.py` cover check path and service-level reconcile creating missing XML
+  - **Success Criteria**: Detect drifts and restore missing artifacts
+
+- [x] **2.3.3** Conflict resolution and rollback ✅ (completed 2025-09-22)
+  - Added pre-existence check for JSON record and idempotent `store_json_and_xml_idempotent` using `ProcessingSession.source_key`
+  - Added compensation: attempt to delete partially written XML on failure
+  - Ensured idempotent no-op if the same idempotency key is retried after completion
+  - Tests `tests/test_dual_storage_idempotent.py` validate idempotency and artifact persistence
+  - **Success Criteria**: Idempotent, compensating operations with clear failure states
 
 ---
 

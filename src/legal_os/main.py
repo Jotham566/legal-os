@@ -23,6 +23,9 @@ from .routers import groundedness as groundedness_router
 from .routers.citation import router as citation_router
 from .routers import recovery as recovery_router
 from .routers import documents as documents_router
+from .routers import akn as akn_router
+from .routers import akn_query as akn_query_router
+from .routers import consistency as consistency_router
 
 
 _APP_START_MONOTONIC = time.monotonic()
@@ -169,6 +172,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(citation_router, prefix="/api/v1", tags=["citations"])
     app.include_router(recovery_router.router)
     app.include_router(documents_router.router)
+    app.include_router(akn_router.router)
+    app.include_router(akn_query_router.router)
+    app.include_router(consistency_router.router)
 
     return app
 
