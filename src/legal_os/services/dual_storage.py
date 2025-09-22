@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from io import BytesIO
 from typing import Optional, cast
+import hashlib
 
 from sqlalchemy.orm import Session
 
@@ -95,17 +96,25 @@ class DualStorageCoordinator:
         else:
             rec = existing
 
-        # Stage 3: persist XML to object storage
+        # Stage 3: persist XML to object storage and write checksum sidecar
         xml_key = artifact_key(document_id, version_id, "akn.xml")
+        sidecar_key = artifact_key(document_id, version_id, "akn.xml.sha256")
+        storage = self._require_storage()
         try:
             buf = BytesIO(xml_bytes)
-            storage = self._require_storage()
             storage.put_object(xml_key, buf, len(xml_bytes))
+            # Compute checksum and write sidecar
+            sha256 = hashlib.sha256(xml_bytes).hexdigest()
+            sidecar_buf = BytesIO(sha256.encode("utf-8"))
+            storage.put_object(sidecar_key, sidecar_buf, len(sha256))
         except Exception as e:
-            # Attempt compensation: delete possibly written object
+            # Attempt compensation: delete possibly written objects
             try:
-                storage = self._require_storage()
                 storage.delete_object(xml_key)
+            except Exception:
+                pass
+            try:
+                storage.delete_object(sidecar_key)
             except Exception:
                 pass
             # Roll back DB insert by expunging and raising, relying on caller
@@ -159,9 +168,15 @@ class DualStorageCoordinator:
 
     def delete_xml_artifact(self, *, document_id: str, version_id: str) -> None:
         xml_key = artifact_key(document_id, version_id, "akn.xml")
+        sidecar_key = artifact_key(document_id, version_id, "akn.xml.sha256")
         try:
             storage = self._require_storage()
             storage.delete_object(xml_key)
+        except Exception:
+            # best effort
+            pass
+        try:
+            storage.delete_object(sidecar_key)
         except Exception:
             # best effort
             pass

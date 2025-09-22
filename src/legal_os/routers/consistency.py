@@ -21,6 +21,8 @@ class CheckResponse(BaseModel):
     has_json: bool
     has_xml: bool
     consistent: bool
+    xml_checksum_matches: bool | None = None
+    xml_well_formed: bool | None = None
 
 
 class ReconcileResponse(CheckResponse):
@@ -38,6 +40,8 @@ async def check_consistency(payload: CheckRequest) -> CheckResponse:
             has_json=report.has_json,
             has_xml=report.has_xml,
             consistent=report.consistent,
+            xml_checksum_matches=report.xml_checksum_matches,
+            xml_well_formed=report.xml_well_formed,
         )
 
 
@@ -55,4 +59,6 @@ async def reconcile(
             has_json=report.has_json,
             has_xml=report.has_xml,
             consistent=report.consistent,
+            xml_checksum_matches=report.xml_checksum_matches,
+            xml_well_formed=report.xml_well_formed,
         )
