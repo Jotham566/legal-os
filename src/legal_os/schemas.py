@@ -5,6 +5,12 @@ from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
+# Allow protected namespace usage like model_used without warnings
+BaseModel.model_config = {  # type: ignore[attr-defined]
+    **getattr(BaseModel, "model_config", {}),
+    "protected_namespaces": (),
+}
+
 
 class DocumentIn(BaseModel):
     title: Optional[str] = Field(default=None, max_length=512)

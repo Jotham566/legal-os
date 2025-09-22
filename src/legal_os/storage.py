@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import BinaryIO, Protocol
+from typing import BinaryIO, Protocol, cast
 
 from .settings import Settings, get_settings
 
@@ -40,6 +40,7 @@ class MinioStorage:
     secret_key: str
     bucket: str
     secure: bool = True
+    url_expires_seconds: int = 900
 
     def __post_init__(self) -> None:
         try:
@@ -53,15 +54,30 @@ class MinioStorage:
             secure=self.secure,
         )
         # Ensure bucket exists
-        if not self._client.bucket_exists(self.bucket):  # pragma: no cover - environment dependent
+        if not self._client.bucket_exists(self.bucket):  # pragma: no cover - env dependent
             self._client.make_bucket(self.bucket)
 
     def put_object(self, key: str, stream: BinaryIO, length: int) -> None:
         self._client.put_object(self.bucket, key, stream, length)
 
     def url_for(self, key: str) -> str | None:
-        # Could generate a presigned URL; keeping simple for now
-        return None
+        try:
+            return cast(
+                str,
+                self._client.presigned_get_object(
+                    self.bucket, key, expires=self.url_expires_seconds
+                ),
+            )
+        except Exception:
+            return None
+
+
+def document_original_key(document_id: str, version_id: str) -> str:
+    return f"documents/{document_id}/{version_id}/original.pdf"
+
+
+def artifact_key(document_id: str, version_id: str, name: str) -> str:
+    return f"documents/{document_id}/{version_id}/artifacts/{name}"
 
 
 def get_storage() -> Storage:
@@ -79,6 +95,7 @@ def get_storage() -> Storage:
             secret_key=s.minio_secret_key,
             bucket=s.minio_bucket,
             secure=s.minio_secure,
+            url_expires_seconds=s.minio_url_expires_seconds,
         )
     os.makedirs(s.uploads_dir, exist_ok=True)
     return LocalStorage(base_dir=s.uploads_dir)
@@ -98,6 +115,7 @@ def get_storage_from_settings(s: Settings) -> Storage:
             secret_key=s.minio_secret_key,
             bucket=s.minio_bucket,
             secure=s.minio_secure,
+            url_expires_seconds=s.minio_url_expires_seconds,
         )
     os.makedirs(s.uploads_dir, exist_ok=True)
     return LocalStorage(base_dir=s.uploads_dir)

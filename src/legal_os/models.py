@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import uuid4
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import JSON, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -86,3 +86,25 @@ class ProcessingSession(Base):
     checkpoints: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     last_error: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
     source_key: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+
+
+class RawJsonStorage(Base):
+    __tablename__ = "raw_json_storage"
+    __table_args__ = (
+        UniqueConstraint("document_id", "version_id", name="uq_raw_json_doc_ver"),
+        Index("ix_raw_json_confidence", "overall_confidence"),
+        Index("ix_raw_json_created_at", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+    document_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    version_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    raw_json_content: Mapped[dict] = mapped_column(JSON, nullable=False)
+    raw_json_size_kb: Mapped[int] = mapped_column(Integer, nullable=False)
+    overall_confidence: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    processing_logs: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    provenance: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    content_checksum: Mapped[str] = mapped_column(String(64), nullable=False, default="")

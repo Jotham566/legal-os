@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     minio_secret_key: str | None = None
     minio_bucket: str | None = None
     minio_secure: bool = True
+    minio_url_expires_seconds: int = 900
 
     # Optional AI provider configuration (stubbed in dev)
     ai_provider: str | None = None  # e.g., "azure", "openai"
@@ -86,6 +87,7 @@ class Settings(BaseSettings):
         - when GPT QA is enabled, ensure models configured
         - when AAD is enabled, require tenant/client/audience
         - when Key Vault is enabled, require keyvault_uri
+        - when MinIO is enabled, require endpoint/keys/bucket and sane expiry bounds
         """
         if not self.app_name:
             raise ValueError("APP_NAME must be set")
@@ -116,6 +118,10 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "MinIO is enabled but missing required settings: " + ", ".join(missing)
                 )
+            if self.minio_url_expires_seconds <= 0:
+                raise ValueError("MINIO_URL_EXPIRES_SECONDS must be positive when MinIO is enabled")
+            if self.minio_url_expires_seconds > 3600:
+                raise ValueError("MINIO_URL_EXPIRES_SECONDS must be <= 3600 seconds")
 
         if self.flags.enable_external_ai:
             if not self.ai_provider or not self.ai_endpoint:

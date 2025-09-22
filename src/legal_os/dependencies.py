@@ -35,6 +35,16 @@ def require_roles(*required_roles: str) -> Callable[[dict], dict]:
     return _checker
 
 
+def require_any_role(*allowed_roles: str) -> Callable[[dict], dict]:
+    def _checker(user: Annotated[dict, Depends(get_current_user)]) -> dict:
+        user_roles = set(user.get("roles", []))
+        if not (user_roles & set(allowed_roles)):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        return user
+
+    return _checker
+
+
 # Simple in-memory rate limiter keyed by client IP and path
 _RATE_BUCKET: dict[tuple[str, str], list[float]] = {}
 
