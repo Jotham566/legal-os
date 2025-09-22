@@ -50,6 +50,10 @@ def configure_json_logging(level: int = logging.INFO) -> None:
     root.setLevel(level)
     for h in root.handlers:
         h.addFilter(_RedactFilter())
+    # Tame noisy third-party loggers that may emit %-formatted messages with args
+    httpx_logger = logging.getLogger("httpx")
+    httpx_logger.setLevel(logging.WARNING)
+    httpx_logger.propagate = False
 
 
 def set_request_id(request_id: Optional[str]) -> None:

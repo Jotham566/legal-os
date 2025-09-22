@@ -20,6 +20,8 @@ from .routers import orchestrator as orchestrator_router
 from .routers import compliance as compliance_router
 from .routers import review as review_router
 from .routers import groundedness as groundedness_router
+from .routers.citation import router as citation_router
+from .routers import recovery as recovery_router
 
 
 _APP_START_MONOTONIC = time.monotonic()
@@ -163,6 +165,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(compliance_router.router)
     app.include_router(review_router.router)
     app.include_router(groundedness_router.router)
+    app.include_router(citation_router, prefix="/api/v1", tags=["citations"])
+    app.include_router(recovery_router.router)
 
     return app
 
