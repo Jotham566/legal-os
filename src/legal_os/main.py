@@ -27,6 +27,8 @@ from .routers import akn as akn_router
 from .routers import akn_query as akn_query_router
 from .routers import consistency as consistency_router
 from .routers import structure as structure_router
+from .routers import crossref as crossref_router
+from .routers import external_ref as external_ref_router
 
 
 _APP_START_MONOTONIC = time.monotonic()
@@ -177,6 +179,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(akn_query_router.router)
     app.include_router(consistency_router.router)
     app.include_router(structure_router.router)
+    app.include_router(crossref_router.router)
+    app.include_router(external_ref_router.router)
 
     return app
 

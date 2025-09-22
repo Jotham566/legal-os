@@ -56,6 +56,12 @@ class CitationService:
             ),
             (r"\bArticle\s+(\d+(?:\.\d+)*)\s+(?:of\s+)?([A-Z\s]+)", "article"),
             (r"\((\d{4})\)\s+([A-Z\s]+)\s+No\.?\s+(\d+)", "statute"),
+            # New: bracketed year case citations like "Smith v. Republic [2020] eKLR"
+            (
+                r"\b([A-Z][A-Za-z\s]+ v\.? [A-Z][A-ZaZ\s]+)\s*\[\s*\d{4}\s*\]"
+                r"\s*(?:eKLR|EA|KLR)?",
+                "case",
+            ),
             (
                 r"\b([A-Z][A-Za-z\s]+ v\.? [A-Z][A-Za-z\s]+)\b,?\s*(\d{4})\s*"
                 r"(?:eKLR|EA|KLR)?",
