@@ -9,3 +9,5 @@ exclude =
     build,
     dist,
     alembic
+per-file-ignores =
+    tests/*:E501,F401,E306

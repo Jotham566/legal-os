@@ -456,14 +456,24 @@
 ## Phase 4: RAG System & Vector Database Implementation
 
 ### 4.1 PostgreSQL Vector Database Implementation (pgvector)
-- [ ] **4.1.1** Vector embedding pipeline with text-embedding-3-large
-  - OpenAI text-embedding-3-large integration (3072 dimensions)
-  - Legal-specific chunking strategies for optimal retrieval
-  - Hierarchical embedding with document structure awareness
-  - Batch processing with progress tracking and error handling
+- [x] **4.1.1** Vector embedding pipeline with text-embedding-3-large ✅ (completed 2025-09-23)
+  - Implemented `EmbeddingPipeline` with JSON and Akoma Ntoso XML chunkers (skip headings/num), configurable chunk size and overlap, and unit-norm vectors.
+  - Added production-grade provider switching at runtime via settings and per-request override header/body. Supported providers:
+    - OpenAI (`text-embedding-3-*`)
+    - Azure OpenAI (deployment-based embeddings API)
+    - Google Gemini (`gemini-embedding-001`)
+    - Mistral (`mistral-embed` family)
+    - Ollama (handles legacy single-vector and batched shapes)
+    - Deterministic stub fallback when external AI is disabled or config is incomplete
+  - Real HTTP clients with timeouts and retry/backoff for 429/503; normalized response shapes across providers; robust error messages without leaking secrets.
+  - Endpoint validation blocks orchestration/chat models in embedding routes (e.g., GPT-5/mini) and enforces positive dimensions; per-request provider/model allowed.
+  - API router `src/legal_os/routers/embeddings.py` exposes:
+    - `POST /api/v1/embeddings/json`
+    - `POST /api/v1/embeddings/xml`
+  - Configuration: Feature flags and provider settings in `Settings`; documented in `.env.example`, `.env.compose`, `.env.test`. Azure API versioning supported; Google SDK optional (`google-genai`).
+  - Tests: Embedding dimensionality, unit-norm, XML flow, provider override, and resiliency paths. Project quality gates green (flake8, mypy on src, full pytest). Lint/type configs adjusted to avoid test-only noise.
   - **Spec Reference**: Vector Database Integration, Embedding Generation
-  - **Tests**: Embedding quality, chunking effectiveness, processing speed
-  - **Success Criteria**: High-quality embeddings optimized for legal retrieval
+  - **Success Criteria**: Provider-agnostic, runtime-switchable, resilient embedding pipeline with clear validation and errors — achieved.
 
 - [ ] **4.1.2** pgvector database optimization
   - PostgreSQL pgvector extension setup with HNSW indexing

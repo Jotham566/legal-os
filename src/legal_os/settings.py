@@ -41,9 +41,13 @@ class Settings(BaseSettings):
     minio_url_expires_seconds: int = 900
 
     # Optional AI provider configuration (stubbed in dev)
-    ai_provider: str | None = None  # e.g., "azure", "openai"
-    ai_endpoint: str | None = None
-    ai_api_key: str | None = None
+    ai_provider: str | None = None  # e.g., "openai", "azure-openai", "google", "mistral", "ollama"
+    ai_endpoint: str | None = None  # required for azure-openai and ollama
+    ai_api_key: str | None = None   # generic key (OpenAI or Azure key)
+    # Provider-specific optional keys
+    google_api_key: str | None = None
+    mistral_api_key: str | None = None
+    ai_azure_api_version: str | None = None  # e.g., 2023-05-15
     qa_model_primary: str = "gpt-5"
     qa_model_fallback: str = "gpt-5-mini"
 
@@ -98,7 +102,9 @@ class Settings(BaseSettings):
             if self.is_sqlite:
                 raise ValueError("SQLite is not allowed in production")
             if not self.jwt_secret and not self.flags.enable_aad:
-                raise ValueError("JWT_SECRET must be set in production (or enable AAD)")
+                raise ValueError(
+                    "JWT_SECRET must be set in production (or enable AAD)"
+                )
 
         if self.flags.enable_pgvector and not self.is_postgres:
             raise ValueError("pgvector requires a PostgreSQL DATABASE_URL")
@@ -116,16 +122,38 @@ class Settings(BaseSettings):
             ]
             if missing:
                 raise ValueError(
-                    "MinIO is enabled but missing required settings: " + ", ".join(missing)
+                    "MinIO is enabled but missing required settings: "
+                    + ", ".join(missing)
                 )
             if self.minio_url_expires_seconds <= 0:
-                raise ValueError("MINIO_URL_EXPIRES_SECONDS must be positive when MinIO is enabled")
+                raise ValueError(
+                    "MINIO_URL_EXPIRES_SECONDS must be positive when MinIO is enabled"
+                )
             if self.minio_url_expires_seconds > 3600:
-                raise ValueError("MINIO_URL_EXPIRES_SECONDS must be <= 3600 seconds")
+                raise ValueError(
+                    "MINIO_URL_EXPIRES_SECONDS must be <= 3600 seconds"
+                )
 
         if self.flags.enable_external_ai:
-            if not self.ai_provider or not self.ai_endpoint:
-                raise ValueError("External AI enabled but AI_PROVIDER/AI_ENDPOINT not set")
+            if not self.ai_provider:
+                raise ValueError("External AI enabled but AI_PROVIDER not set")
+            # Provider-specific endpoint/key checks
+            if self.ai_provider in {"azure-openai", "ollama"} and not self.ai_endpoint:
+                raise ValueError(
+                    "AI_ENDPOINT is required for provider: " + self.ai_provider
+                )
+            if self.ai_provider == "openai" and not (self.ai_api_key):
+                raise ValueError(
+                    "OPENAI requires AI_API_KEY when external AI enabled"
+                )
+            if self.ai_provider == "google" and not (self.google_api_key):
+                raise ValueError(
+                    "Google Generative AI requires GOOGLE_API_KEY when external AI enabled"
+                )
+            if self.ai_provider == "mistral" and not (self.mistral_api_key):
+                raise ValueError(
+                    "Mistral requires MISTRAL_API_KEY when external AI enabled"
+                )
 
         if self.flags.enable_gptqa:
             if not self.qa_model_primary or not self.qa_model_fallback:
@@ -133,7 +161,9 @@ class Settings(BaseSettings):
 
         if self.flags.enable_aad:
             if not self.aad_tenant_id or not self.aad_client_id or not self.aad_audience:
-                raise ValueError("AAD enabled but tenant/client/audience not configured")
+                raise ValueError(
+                    "AAD enabled but tenant/client/audience not configured"
+                )
 
         if self.flags.enable_keyvault and not self.keyvault_uri:
             raise ValueError("Key Vault enabled but KEYVAULT_URI is missing")
